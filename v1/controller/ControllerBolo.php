@@ -25,9 +25,9 @@
                     }
                     return $this->_modelBolo->findMany();
                     break;
-                // case 'POST':
-                //     return $this->_modelBolo->create($this->_ingrediente);
-                //     break;
+                case 'POST':
+                    return $this->_modelBolo->create();
+                    break;
                 // case 'PUT':
                 //     return $this->_modelBolo->update($this->_idBolo, $this->_ingrediente);
                 // break;

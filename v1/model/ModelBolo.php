@@ -19,10 +19,10 @@ class ModelBolo {
         //atribuindo infomações que vieram aos atributos da calsse
             $this->_conn = $conn;
             $this->_idBolo = $_REQUEST["idBolo"] ?? $dadosBolo->idBolo ?? null;
-            $this->_nomeDetalhado = $_REQUEST["idBolo"] ?? $dadosBolo->nomeDetalhado ?? null;
-            $this->_nomeCard = $_REQUEST["idBolo"] ?? $dadosBolo->nomeCard ?? null;
-            $this->_precoQuilo = $_REQUEST["idBolo"] ?? $dadosBolo->precoQuilo ?? null;
-            $this->_descricao = $_REQUEST["idBolo"] ?? $dadosBolo->descricao ?? null;
+            $this->_nomeDetalhado = $_REQUEST["nomeDetalhado"] ?? $dadosBolo->nomeDetalhado ?? null;
+            $this->_nomeCard = $_REQUEST["nomeCard"] ?? $dadosBolo->nomeCard ?? null;
+            $this->_precoQuilo = $_REQUEST["precoQuilo"] ?? $dadosBolo->precoQuilo ?? null;
+            $this->_descricao = $_REQUEST["descricao"] ?? $dadosBolo->descricao ?? null;
 
             $this->_conn= $conn; 
     }
@@ -33,21 +33,35 @@ class ModelBolo {
         $statement = $this->_conn->prepare($sqlfindOne); 
         $statement->bindValue(1, $this->_idBolo);
         $statement->execute(); 
-        return $statement->fetchAll(\PDO::FETCH_ASSOC); //só retorna array a
+        return $statement->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     function findMany() {
-        //criando a instrucao SQL
             $sqlFindMany = "SELECT * FROM tblbolo";
-                                
-        //executando a instrução e retornando dados
+
             $statement= $this->_conn->prepare($sqlFindMany); 
             $statement->execute(); 
-            return $statement->fetchAll(\PDO::FETCH_ASSOC); //só retorna array associativo 
+            return $statement->fetchAll(\PDO::FETCH_ASSOC); 
     }
 
-    function create($data) {
+    function create() {
 
+        //NECESSÁRIO FAZER O RECEBIMENTO DE IMAGEMS. INDA NÃO FINALIZADO!!!!!
+        $sqlCreate = "INSERT INTO tblbolo (nomeDetalhado, nomeCard, precoPorQuilo, descricao) 
+        VALUES (?, ?, ?, ?)";
+
+        $statement = $this->_conn->prepare($sqlCreate); 
+        $statement->bindValue(1, $this->_nomeDetalhado);
+        $statement->bindValue(2, $this->_nomeCard);
+        $statement->bindValue(3, $this->_precoQuilo);
+        $statement->bindValue(4, $this->_descricao);
+
+        if ($statement->execute()){
+            return "Success";
+        }
+        else{
+            return "Error";
+        }
     }
 
     function update($id, $data) {
