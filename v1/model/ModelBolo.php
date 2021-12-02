@@ -18,27 +18,32 @@ class ModelBolo {
 
         //atribuindo infomações que vieram aos atributos da calsse
             $this->_conn = $conn;
-            $this->_idBolo = $dadosBolo["idBolo"];
-            $this->_nomeDetalhado = $dadosBolo["nomeDetalhado"];
-            $this->_nomeCard = $dadosBolo["nomeCard"];
-            $this->_precoQuilo = $dadosBolo["precoQuilo"];
-            $this->_descricao = $dadosBolo["descricao"];
+            $this->_idBolo = $_REQUEST["idBolo"] ?? $dadosBolo->idBolo ?? null;
+            $this->_nomeDetalhado = $_REQUEST["idBolo"] ?? $dadosBolo->nomeDetalhado ?? null;
+            $this->_nomeCard = $_REQUEST["idBolo"] ?? $dadosBolo->nomeCard ?? null;
+            $this->_precoQuilo = $_REQUEST["idBolo"] ?? $dadosBolo->precoQuilo ?? null;
+            $this->_descricao = $_REQUEST["idBolo"] ?? $dadosBolo->descricao ?? null;
 
             $this->_conn= $conn; 
     }
 
-    function findOne($id) {
+    function findOne() {
+        $sqlfindOne = "SELECT * FROM tblbolo WHERE idBolo = ?";
 
+        $statement = $this->_conn->prepare($sqlfindOne); 
+        $statement->bindValue(1, $this->_idBolo);
+        $statement->execute(); 
+        return $statement->fetchAll(\PDO::FETCH_ASSOC); //só retorna array a
     }
 
     function findMany() {
         //criando a instrucao SQL
-            $sqlSelectAll = "SELECT * FROM tblbolo";
+            $sqlFindMany = "SELECT * FROM tblbolo";
                                 
         //executando a instrução e retornando dados
-            $sqlSelectAll= $this->_conn->prepare($sqlSelectAll); 
-            $sqlSelectAll->execute(); 
-            return $sqlSelectAll->fetchAll(\PDO::FETCH_ASSOC); //só retorna array associativo 
+            $statement= $this->_conn->prepare($sqlFindMany); 
+            $statement->execute(); 
+            return $statement->fetchAll(\PDO::FETCH_ASSOC); //só retorna array associativo 
     }
 
     function create($data) {

@@ -7,23 +7,22 @@
         private $_idBolo;
 
         public function __construct($modelBolo) {
-        $this->_modelBolo = $modelBolo;
-        $this->_metodo = $_SERVER['REQUEST_METHOD'];
+            $this->_modelBolo = $modelBolo;
+            $this->_metodo = $_SERVER['REQUEST_METHOD'];
 
-        $json = file_get_contents('php://input');
-        $dadosBolo = json_decode($json);
+            $json = file_get_contents('php://input');
+            $dadosBolo = json_decode($json);
 
-        $this->_idBolo = $dadosBolo->idBolo ?? null;
-        $this->_modelBolo = $modelBolo;
-
+            $this->_idBolo = $_REQUEST["idBolo"] ?? $dadosBolo->idBolo ?? null;
         }
 
         public function router() {
             switch ($this->_metodo) {
                 case 'GET':
-                    // if($this->_idBolo !== null) {
-                    //     return $this->_modelBolo->findOne($this->_idBolo);
-                    // }
+                    
+                    if($this->_idBolo !== null) {
+                        return $this->_modelBolo->findOne();
+                    }
                     return $this->_modelBolo->findMany();
                     break;
                 // case 'POST':
