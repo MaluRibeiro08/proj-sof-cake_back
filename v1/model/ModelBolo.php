@@ -90,7 +90,17 @@ class ModelBolo {
             $statement->bindValue(5, $this->_idBolo);
             $statement->execute();
 
-            //NECESSÁRIO APAGAR A IMAGEM DA PASTA UPLOAD
+            $sqlFotosCadastradas = "SELECT nomeArquivo FROM tblimagembolo WHERE idBolo = ?";
+            $statement = $this->_conn->prepare($sqlFotosCadastradas);
+            $statement->bindValue(1, $this->_idBolo);
+            $statement->execute();
+            $arrayNomesAquivos = $statement->fetchAll(\PDO::FETCH_ASSOC);
+
+            foreach ($arrayNomesAquivos as $arquivo => $dadosArquivoApagar) {
+                $arquivo = $dadosArquivoApagar['nomeArquivo'];
+                unlink("../bolo/uploads/$arquivo");
+            }
+
             $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = ?;";
             $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
             $statementDelecaoImagens->bindValue(1, $this->_idBolo);
