@@ -10,12 +10,9 @@ class ModelUsuario {
     private $_eAdmin;
 
     public function __construct($conn) {
-
-        //PERMITE RECEBER DADOS JSON ATRAVÉS DA REQUISIÇÃO
         $json = file_get_contents("php://input");
         $dadosUsuario = json_decode($json);
 
-        //RECEBIMENTO DOS DADOS VINDOS DO POSTMAN (sejam pela URL/GET ou pelo corpo/POST)
         $this->_idUsuario = $_REQUEST["idUsuario"] ?? $dadosUsuario->idUsuario ?? null;
         $this->_nome = $_REQUEST["nome"] ?? $dadosUsuario->nome ?? null;
         $this->_cpf = $_REQUEST["cpf"] ?? $dadosUsuario->cpf ?? null;
@@ -23,97 +20,79 @@ class ModelUsuario {
         $this->_eAdmin = $_REQUEST["eAdmin"] ?? $dadosUsuario->eAdmin ?? null;
 
         $this->_conn = $conn;
-
     }
 
-    public function findAll() {
+    public function findOne() {
+        $sql = "SELECT * FROM tblusuario WHERE idUsuario = :idUsuario";
 
-        //MONSTA A INSTRUÇÃO SQL
+        $stm = $this->_conn->prepare($sql);
+        $stm->bindParam(":idUsuario", $this->_idUsuario);
+
+        $stm->execute();
+        return $stm->fetchAll(\PDO:: FETCH_ASSOC);
+    }
+
+    public function findMany() {
         $sql = "SELECT * FROM tblusuario";
 
-        //PREPARA UM PROCESSO DE EXECUÇÃO DE INSTRUÇÃO SQL
         $stm = $this->_conn->prepare($sql);
 
-        //EXECUTA A INSTRUÇÃO SQL
         $stm->execute();
-
-        //DEVOLVE OS VALORES DA SELECT PARA SEREM UTILIZADOS
         return $stm->fetchAll(\PDO:: FETCH_ASSOC);
-
-    }
-
-    public function findById() {
-
-        //MONTA A INSTRUÇÃO SQL
-        $sql = "SELECT * FROM tblusuario WHERE idUsuario = ?";
-
-        //PREPARA UM PROCESSO DE EXECUÇÃO DE INSTRUÇÃO SQL
-        $stm = $this->_conn->prepare($sql);
-        $stm->bindValue(1, $this->_idUsuario);
-
-        $stm->execute();
-
-        return $stm->fetchAll(\PDO:: FETCH_ASSOC);
-
     }
 
     public function create() {
+        try {
+            $sql = "INSERT INTO tblusuario (nome, cpf, telefone, eAdmin) VALUES (:nome, :cpf, :telefone, :eAdmin)";
 
-        $sql = "INSERT INTO tblusuario (nome, cpf, telefone, eAdmin) VALUES (?, ?, ?, ?)";
+            // $extensao = pathinfo($this->_fotografia, PATHINFO_EXTENSION);
+            // $novoNomeArquivo = md5(microtime()) . ".$extensao";
 
-        // $extensao = pathinfo($this->_fotografia, PATHINFO_EXTENSION);
-        // $novoNomeArquivo = md5(microtime()) . ".$extensao";
+            // move_uploaded_file($_FILES["fotografia"]["tmp_name"], "../upload/$novoNomeArquivo");
 
-        // move_uploaded_file($_FILES["fotografia"]["tmp_name"], "../upload/$novoNomeArquivo");
+            $stm = $this->_conn->prepare($sql);
+            $stm->bindParam(":nome", $this->_nome);
+            $stm->bindParam(":cpf", $this->_cpf);
+            $stm->bindParam(":telefone", $this->_telefone);
+            $stm->bindParam(":eAdmin", $this->_eAdmin);
 
-        $stm = $this->_conn->prepare($sql);
-
-        $stm->bindValue(1, $this->_nome);
-        $stm->bindValue(2, $this->_cpf);
-        $stm->bindValue(3, $this->_telefone);
-        $stm->bindValue(4, $this->_eAdmin);
-
-        if ($stm->execute()) {
-            return "Sucess";
-        } else {
-            return "Error";
+            $stm->execute();
+            return gerarResposta("Usuário cadastrado com sucesso");
+        } catch (PDOException $error) {
+            return gerarResposta($error->getMessage(), 'erro');
         }
-
     }
 
     public function delete(){
+        try {
+            $sql = "DELETE FROM tblusuario WHERE idUsuario = :idUsuario";
 
-        $sql = "DELETE FROM tblusuario WHERE idUsuario = ?";
+            $stmt = $this->_conn->prepare($sql);
+            $stmt->bindParam(":idUsuario", $this->_idUsuario);
 
-        $stmt = $this->_conn->prepare($sql);
-
-        $stmt->bindValue(1, $this->_idUsuario);
-
-        if ($stmt->execute()) {
-            return "Dados excluídos com sucesso!";
+            $stmt->execute();
+            return gerarResposta("Usuário removido com sucesso");
+        } catch (PDOException $error) {
+            return gerarResposta($error->getMessage(), 'erro');
         }
 
     }
 
     public function update(){
+        try {
+            $sql = "UPDATE tblusuario SET nome = :nome, cpf = :cpf, telefone = :telefone, eAdmin = :eAdmin, WHERE idusuario = :idUsuario";
+            
+            $stm = $this->_conn->prepare($sql);
+            $stm->bindParam(":nome", $this->_nome);
+            $stm->bindParam(":cpf", $this->_cpf);
+            $stm->bindParam(":telefone", $this->_telefone);
+            $stm->bindParam(":eAdmin", $this->_eAdmin);
+            $stm->bindParam(":idUsuario", $this->_idUsuario);
 
-        $sql = "UPDATE tblusuario SET 
-        nome = ?,
-        cpf = ?,
-        telefone = ?,
-        eAdmin = ?,
-        WHERE idusuario = ?";
-
-        $stmt = $this->_conn->prepare($sql);
-
-        $stm->bindValue(1, $this->_nome);
-        $stm->bindValue(2, $this->_cpf);
-        $stm->bindValue(3, $this->_telefone);
-        $stm->bindValue(4, $this->_eAdmin);
-        $stmt->bindValue(5, $this->_idUsuario);
-
-        if ($stmt->execute()) {
-            return "Dados alterados com sucesso!";
+            $stm->execute();
+            return gerarResposta("Usuário atualizado com sucesso");
+        } catch (PDOException $error) {
+            return gerarResposta($error->getMessage(), 'erro');
         }
 
     }

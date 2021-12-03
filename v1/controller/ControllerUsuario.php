@@ -11,11 +11,9 @@
             $this->_modelUsuario = $model;
             $this->_method = $_SERVER['REQUEST_METHOD'];
 
-            //PERMITE RECEBER DADOS JSON ATRAVÉS DA REQUISIÇÃO
             $json = file_get_contents("php://input");
             $dadosUsuario = json_decode($json);
 
-            //se tiver algo, passa essa alguma coisa. Se não, passa nulo
             $this->_idUsuario = $_REQUEST["idUsuario"] ?? $dadosUsuario->idUsuario ?? null;
         }
 
@@ -25,9 +23,9 @@
                 case 'GET':
 
                     if (isset($this->_idUsuario)) {
-                        return $this->_modelUsuario->findById();
+                        return $this->_modelUsuario->findOne();
                     }
-                    return $this->_modelUsuario->findAll();
+                    return $this->_modelUsuario->findMany();
                     
                     break;
 
