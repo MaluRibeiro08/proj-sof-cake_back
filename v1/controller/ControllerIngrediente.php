@@ -5,7 +5,6 @@
         private $_metodo;
         private $_modelIngrediente;
 
-        private $_ingrediente = [];
 
         public function __construct($model) {
         $this->_modelIngrediente = $model;
