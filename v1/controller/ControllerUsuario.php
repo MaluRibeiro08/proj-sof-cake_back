@@ -1,5 +1,7 @@
 <?php
 
+    require('../utils/Resposta.php');
+
     class ControllerUsuario {
 
         private $_method;
@@ -18,7 +20,7 @@
         }
 
         function router() {
-
+            
             switch ($this->_method) {
                 case 'GET':
 
@@ -26,7 +28,7 @@
                         return $this->_modelUsuario->findOne();
                     }
                     return $this->_modelUsuario->findMany();
-                    
+            
                     break;
 
                 case 'POST':

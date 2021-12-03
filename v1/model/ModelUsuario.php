@@ -22,14 +22,37 @@ class ModelUsuario {
         $this->_conn = $conn;
     }
 
+    // Primeiro você vai obter os dados do tblUsuario e salva numa variavel
+    // Agora você faz outro select e verifica na tblPerfil se há um usuario com o id da tblUsuario
+    // Agora você mescla as arrays
+
+
     public function findOne() {
+
         $sql = "SELECT * FROM tblusuario WHERE idUsuario = :idUsuario";
 
         $stm = $this->_conn->prepare($sql);
         $stm->bindParam(":idUsuario", $this->_idUsuario);
 
         $stm->execute();
-        return $stm->fetchAll(\PDO:: FETCH_ASSOC);
+
+        $usuario = $stm->fetchAll(\PDO:: FETCH_ASSOC);
+
+        $sql = "SELECT * FROM tblperfil WHERE idUsuario = :idUsuario";
+
+        $stm = $this->_conn->prepare($sql);
+        $stm->bindParam(":idUsuario", $this->_idUsuario);
+        $stm->execute();
+
+        $perfil = $stm->fetchAll(\PDO:: FETCH_ASSOC);
+
+        if($perfil !== null) {
+            $dados = array_merge($usuario, $perfil);
+            return $dados;
+        } else {
+            return $usuario;
+        }
+
     }
 
     public function findMany() {
@@ -44,11 +67,6 @@ class ModelUsuario {
     public function create() {
         try {
             $sql = "INSERT INTO tblusuario (nome, cpf, telefone, eAdmin) VALUES (:nome, :cpf, :telefone, :eAdmin)";
-
-            // $extensao = pathinfo($this->_fotografia, PATHINFO_EXTENSION);
-            // $novoNomeArquivo = md5(microtime()) . ".$extensao";
-
-            // move_uploaded_file($_FILES["fotografia"]["tmp_name"], "../upload/$novoNomeArquivo");
 
             $stm = $this->_conn->prepare($sql);
             $stm->bindParam(":nome", $this->_nome);
@@ -80,7 +98,7 @@ class ModelUsuario {
 
     public function update(){
         try {
-            $sql = "UPDATE tblusuario SET nome = :nome, cpf = :cpf, telefone = :telefone, eAdmin = :eAdmin, WHERE idusuario = :idUsuario";
+            $sql = "UPDATE tblusuario SET nome = :nome, cpf = :cpf, telefone = :telefone, eAdmin = :eAdmin WHERE idUsuario = :idUsuario";
             
             $stm = $this->_conn->prepare($sql);
             $stm->bindParam(":nome", $this->_nome);
