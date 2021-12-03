@@ -7,6 +7,7 @@ class ModelBolo {
     private $_nomeCard;
     private $_precoQuilo;
     private $_descricao;
+    private $_avisos;
 
     function __construct($conn) {
        
@@ -46,21 +47,39 @@ class ModelBolo {
 
     function create() {
 
-        //NECESSÁRIO FAZER O RECEBIMENTO DE IMAGEMS. INDA NÃO FINALIZADO!!!!!
-        $sqlCreate = "INSERT INTO tblbolo (nomeDetalhado, nomeCard, precoPorQuilo, descricao) 
-        VALUES (?, ?, ?, ?)";
+        try {
+            $sqlCreate = "INSERT INTO tblbolo (nomeDetalhado, nomeCard, precoPorQuilo, descricao) 
+            VALUES (?, ?, ?, ?)";
+    
+            $statement = $this->_conn->prepare($sqlCreate); 
+            $statement->bindValue(1, $this->_nomeDetalhado);
+            $statement->bindValue(2, $this->_nomeCard);
+            $statement->bindValue(3, $this->_precoQuilo);
+            $statement->bindValue(4, $this->_descricao);
 
-        $statement = $this->_conn->prepare($sqlCreate); 
-        $statement->bindValue(1, $this->_nomeDetalhado);
-        $statement->bindValue(2, $this->_nomeCard);
-        $statement->bindValue(3, $this->_precoQuilo);
-        $statement->bindValue(4, $this->_descricao);
+            $statement->execute();
 
-        if ($statement->execute()){
-            return "Success";
-        }
-        else{
-            return "Error";
+            $this->_idBolo = $this->_conn->lastInsertId();
+
+            foreach ($_FILES as $indice => $dadosImagem){
+                
+                $extensao = pathinfo($dadosImagem['name'], PATHINFO_EXTENSION);
+                $novoNomeArquivo = md5(microtime()) . ".$extensao";
+                move_uploaded_file($dadosImagem["tmp_name"], "../bolo/uploads/$novoNomeArquivo");
+
+                $sqlCreateImagem= "INSERT INTO tblimagembolo (nomeArquivo, idBolo) VALUES (?, ?);";
+
+                $statementImagem = $this->_conn->prepare($sqlCreateImagem); 
+                $statementImagem->bindValue(1, $novoNomeArquivo);
+                $statementImagem->bindValue(2, $this->_idBolo);
+                $statementImagem->execute();
+            }
+        
+
+            return gerarResposta("Bolo cadastrado com sucesso");
+
+        } catch (PDOException $error) {
+            return gerarResposta($error->getMessage(), 'erro');
         }
     }
 
