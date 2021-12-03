@@ -105,14 +105,25 @@ class ModelUsuario {
     }
 
     public function delete(){
+
         try {
+
+            $sql = "DELETE FROM tblperfil WHERE idUsuario = :idUsuario";
+
+            $stm = $this->_conn->prepare($sql);
+            $stm->bindParam(":idUsuario", $this->_idUsuario);
+            $stm->execute();
+
+
             $sql = "DELETE FROM tblusuario WHERE idUsuario = :idUsuario";
 
             $stmt = $this->_conn->prepare($sql);
             $stmt->bindParam(":idUsuario", $this->_idUsuario);
 
             $stmt->execute();
+
             return gerarResposta("Usuário removido com sucesso");
+
         } catch (PDOException $error) {
             return gerarResposta($error->getMessage(), 'erro');
         }
