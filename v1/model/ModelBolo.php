@@ -10,14 +10,9 @@ class ModelBolo {
     private $_avisos;
 
     function __construct($conn) {
-       
-        //permissão para receber dados em JSON através da requisição
             $json = file_get_contents("php://input");
-            //aceita todos os tipos de dados
             $dadosBolo = json_decode($json);
-            //pegas os dados e transformam em array
 
-        //atribuindo infomações que vieram aos atributos da calsse
             $this->_conn = $conn;
             $this->_idBolo = $_REQUEST["idBolo"] ?? $dadosBolo->idBolo ?? null;
             $this->_nomeDetalhado = $_REQUEST["nomeDetalhado"] ?? $dadosBolo->nomeDetalhado ?? null;
@@ -48,8 +43,7 @@ class ModelBolo {
     function create() {
 
         try {
-            $sqlCreate = "INSERT INTO tblbolo (nomeDetalhado, nomeCard, precoPorQuilo, descricao) 
-            VALUES (?, ?, ?, ?)";
+            $sqlCreate = "INSERT INTO tblbolo (nomeDetalhado, nomeCard, precoPorQuilo, descricao) VALUES (?, ?, ?, ?)";
     
             $statement = $this->_conn->prepare($sqlCreate); 
             $statement->bindValue(1, $this->_nomeDetalhado);
@@ -83,12 +77,68 @@ class ModelBolo {
         }
     }
 
-    function update($id, $data) {
+    function update() {
 
+        try {
+            $sqlUpdate = "UPDATE tblbolo SET nomeDetalhado = ?, nomeCard = ?, precoPorQuilo = ?, descricao = ? WHERE idBolo = ?";
+
+            $statement = $this->_conn->prepare($sqlUpdate);
+            $statement->bindValue(1, $this->_nomeDetalhado);
+            $statement->bindValue(2, $this->_nomeCard);
+            $statement->bindValue(3, $this->_precoQuilo);
+            $statement->bindValue(4, $this->_descricao);
+            $statement->bindValue(5, $this->_idBolo);
+            $statement->execute();
+
+            //NECESSÁRIO APAGAR A IMAGEM DA PASTA UPLOAD
+            $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = ?;";
+            $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
+            $statementDelecaoImagens->bindValue(1, $this->_idBolo);
+            $statementDelecaoImagens->execute();
+            
+
+            foreach ($_FILES as $indice => $dadosImagem){
+                
+                $extensao = pathinfo($dadosImagem['name'], PATHINFO_EXTENSION);
+                $novoNomeArquivo = md5(microtime()) . ".$extensao";
+                move_uploaded_file($dadosImagem["tmp_name"], "../bolo/uploads/$novoNomeArquivo");
+
+
+                $sqlUpdateImagem= "INSERT INTO tblimagembolo (nomeArquivo, idBolo) VALUES (?, ?);";
+
+                $statementImagem = $this->_conn->prepare($sqlUpdateImagem); 
+                $statementImagem->bindValue(1, $novoNomeArquivo);
+                $statementImagem->bindValue(2, $this->_idBolo);
+                $statementImagem->execute();
+            }
+
+            return gerarResposta("Informações do bolo atualizadas com sucesso");
+
+            
+        } catch (PDOException $error) {
+            return gerarResposta($error->getMessage(), 'erro');
+        }
+        
     }
 
-    function delete($id) {
+    function delete() {
+        try {
+            //NECESSÁRIO APAGAR A IMAGEM DA PASTA UPLOAD
+            $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = ?;";
+            $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
+            $statementDelecaoImagens->bindValue(1, $this->_idBolo);
+            $statementDelecaoImagens->execute();
+            
+            $sqlDeletaImagensExistentes = "DELETE FROM tblbolo WHERE idBolo = ?;";
+            $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
+            $statementDelecaoImagens->bindValue(1, $this->_idBolo);
+            $statementDelecaoImagens->execute();
 
+            return gerarResposta("Informações do bolo apagadas com sucesso");
+
+        } catch (PDOException $error) {
+            return gerarResposta($error->getMessage(), 'erro');
+        }
     }
 }
 

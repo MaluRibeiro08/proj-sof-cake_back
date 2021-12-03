@@ -21,19 +21,18 @@
             switch ($this->_metodo) {
                 case 'GET':
                     if($this->_ingrediente['id'] !== null) {
-                        return $this->_modelIngrediente->findOne($this->_ingrediente['id']);
+                        return $this->_modelIngrediente->findOne();
                     }
                     return $this->_modelIngrediente->findMany();
                     break;
                 case 'POST':
-                    return $this->_modelIngrediente->create($this->_ingrediente);
+                    return $this->_modelIngrediente->create();
                     break;
                 case 'PUT':
-                    return $this->_modelIngrediente->update($this->_ingrediente['id'], $this->_ingrediente);
+                    return $this->_modelIngrediente->update();
                 break;
                 case 'DELETE':
-                    $idIngrediente = $this->_ingrediente['id'];
-                    return $this->_modelIngrediente->delete($idIngrediente);
+                    return $this->_modelIngrediente->delete();
                     break;
                 default:
                     return gerarResposta('Method not allowed');

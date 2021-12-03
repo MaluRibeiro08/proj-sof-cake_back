@@ -5,6 +5,7 @@
         private $_metodo;
         private $_modelBolo;
         private $_idBolo;
+        private $_acao;
 
         public function __construct($modelBolo) {
             $this->_modelBolo = $modelBolo;
@@ -14,6 +15,7 @@
             $dadosBolo = json_decode($json);
 
             $this->_idBolo = $_REQUEST["idBolo"] ?? $dadosBolo->idBolo ?? null;
+            $this->_acao = $_REQUEST["acao"] ?? $dadosBolo->acao ?? null;
         }
 
         public function router() {
@@ -25,19 +27,24 @@
                     }
                     return $this->_modelBolo->findMany();
                     break;
+
                 case 'POST':
-                    return $this->_modelBolo->create();
+                    if ($this->_acao == "create") {
+                        return $this->_modelBolo->create();
+                        break;
+                    }
+                    elseif ($this->_acao == "update"){
+                        return $this->_modelBolo->update(); 
+                        break;
+                    }
+                    elseif ($this->_acao == "delete") {
+                        return $this->_modelBolo->delete();
+                    }
                     break;
-                // case 'PUT':
-                //     return $this->_modelBolo->update($this->_idBolo, $this->_ingrediente);
-                // break;
-                // case 'DELETE':
-                //     $idIngrediente = $this->_idBolo;
-                //     return $this->_modelBolo->delete($idIngrediente);
-                //     break;
-                // default:
-                //     return gerarResposta('Method not allowed');
-                //     break;
+            
+                default:
+                    return gerarResposta('Method not allowed');
+                    break;
             }
         }
     }
