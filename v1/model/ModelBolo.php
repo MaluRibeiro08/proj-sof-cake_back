@@ -33,11 +33,11 @@ class ModelBolo {
     }
 
     function findMany() {
-            $sqlFindMany = "SELECT * FROM tblbolo";
+        $sqlFindMany = "SELECT * FROM tblbolo";
 
-            $statement= $this->_conn->prepare($sqlFindMany); 
-            $statement->execute(); 
-            return $statement->fetchAll(\PDO::FETCH_ASSOC); 
+        $statement= $this->_conn->prepare($sqlFindMany); 
+        $statement->execute(); 
+        return $statement->fetchAll(\PDO::FETCH_ASSOC); 
     }
 
     function create() {
@@ -133,7 +133,7 @@ class ModelBolo {
 
     function delete() {
         try {
-            
+
             $sqlFotosCadastradas = "SELECT nomeArquivo FROM tblimagembolo WHERE idBolo = ?";
             $statement = $this->_conn->prepare($sqlFotosCadastradas);
             $statement->bindValue(1, $this->_idBolo);
