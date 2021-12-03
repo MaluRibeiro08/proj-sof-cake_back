@@ -8,6 +8,10 @@ class ModelUsuario {
     private $_cpf;
     private $_telefone;
     private $_eAdmin;
+    private $_email;
+    private $_senha;
+    private $_foto;
+    
 
     public function __construct($conn) {
         $json = file_get_contents("php://input");
@@ -18,6 +22,9 @@ class ModelUsuario {
         $this->_cpf = $_REQUEST["cpf"] ?? $dadosUsuario->cpf ?? null;
         $this->_telefone = $_REQUEST["telefone"] ?? $dadosUsuario->telefone ?? null;
         $this->_eAdmin = $_REQUEST["eAdmin"] ?? $dadosUsuario->eAdmin ?? null;
+        $this->_email = $_REQUEST["email"] ?? $dadosUsuario->email ?? null;
+        $this->_senha = $_REQUEST["senha"] ?? $dadosUsuario->senha ?? null;
+        $this->_foto = $_REQUEST["foto"] ?? $dadosUsuario->foto ?? null;
 
         $this->_conn = $conn;
     }
@@ -65,17 +72,33 @@ class ModelUsuario {
     }
 
     public function create() {
-        try {
-            $sql = "INSERT INTO tblusuario (nome, cpf, telefone, eAdmin) VALUES (:nome, :cpf, :telefone, :eAdmin)";
 
-            $stm = $this->_conn->prepare($sql);
+        try {
+            $sqlUsuario = "INSERT INTO tblusuario (nome, cpf, telefone, eAdmin) VALUES (:nome, :cpf, :telefone, :eAdmin)";
+
+            $stm = $this->_conn->prepare($sqlUsuario);
             $stm->bindParam(":nome", $this->_nome);
             $stm->bindParam(":cpf", $this->_cpf);
             $stm->bindParam(":telefone", $this->_telefone);
             $stm->bindParam(":eAdmin", $this->_eAdmin);
 
             $stm->execute();
+
+            $this->_idUsuario = $this->_conn->lastInsertId();
+
+
+            $sqlPerfil = "INSERT INTO tblperfil (email, senha, foto, idUsuario) VALUES (:email, :senha, :foto, :idUsuario)";
+            
+            $stmPerfil = $this->_conn->prepare($sqlPerfil);
+            $stmPerfil->bindParam(":email", $this->_email);
+            $stmPerfil->bindParam(":senha", $this->_senha);
+            $stmPerfil->bindParam(":foto", $this->_foto);
+            $stmPerfil->bindParam(":idUsuario", $this->_idUsuario);
+
+             $stmPerfil->execute();
+
             return gerarResposta("Usuário cadastrado com sucesso");
+
         } catch (PDOException $error) {
             return gerarResposta($error->getMessage(), 'erro');
         }
