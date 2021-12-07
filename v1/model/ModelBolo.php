@@ -24,32 +24,94 @@ class ModelBolo {
     }
 
     function findOne() {
-        $sqlfindOne = "SELECT * FROM tblbolo WHERE idBolo = ?";
+        $sqlfindOne = "SELECT tblBolo.*, tblImagemBolo.nomeArquivo, tblIngrediente.nome AS nomeIngrediente FROM tblbolo
+        INNER JOIN tblImagemBolo ON tblbolo.idBolo = tblImagemBolo.idBolo
+        INNER JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
+        INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
+        WHERE tblBolo.idBolo = :idBolo GROUP BY tblIngrediente.nome";
 
         $statement = $this->_conn->prepare($sqlfindOne); 
-        $statement->bindValue(1, $this->_idBolo);
+        $statement->bindParam(":idBolo", $this->_idBolo);
         $statement->execute(); 
-        return $statement->fetchAll(\PDO::FETCH_ASSOC);
+        $bolos = $statement->fetchAll(\PDO::FETCH_ASSOC);
+
+
+        $resultado = [];
+
+        foreach($bolos as $bolo) {
+            $bolo["nomeArquivo"] = "http://localhost/softcake/backend/v1/bolo/uploads/" . $bolo["nomeArquivo"];
+            $idBolo = $bolo["idBolo"];
+            $resultado[$idBolo] = array_merge(
+                $bolo, 
+                    [
+                        "imagens"=>(
+                            array_key_exists($idBolo, $resultado) && array_search($bolo["nomeArquivo"], $resultado[$idBolo]["imagens"]) !== false ?
+                            $resultado[$idBolo]["imagens"] :
+                            array_merge($resultado[$idBolo]["imagens"] ?? [], [$bolo["nomeArquivo"]])
+                        ),
+                        "ingredientes"=>(
+                            array_key_exists($idBolo, $resultado) && array_search($bolo["nomeIngrediente"], $resultado[$idBolo]["ingredientes"]) !== false ?
+                            $resultado[$idBolo]["ingredientes"] :
+                            array_merge($resultado[$idBolo]["ingredientes"] ?? [], [$bolo["nomeIngrediente"]]) 
+                        )
+                    ]
+                );
+            unset($resultado[$bolo["idBolo"]]["nomeArquivo"]);
+            unset($resultado[$bolo["idBolo"]]["nomeIngrediente"]);
+        }
+
+        return $resultado;
     }
 
     function findMany() {
-        $sqlFindMany = "SELECT * FROM tblbolo";
+        $sqlFindMany = "SELECT tblBolo.*, tblImagemBolo.nomeArquivo, tblIngrediente.nome AS nomeIngrediente FROM tblbolo
+        INNER JOIN tblImagemBolo ON tblbolo.idBolo = tblImagemBolo.idBolo
+        INNER JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
+        INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
+        GROUP BY tblIngrediente.nome";
 
         $statement= $this->_conn->prepare($sqlFindMany); 
         $statement->execute(); 
-        return $statement->fetchAll(\PDO::FETCH_ASSOC); 
+        $bolos = $statement->fetchAll(\PDO::FETCH_ASSOC);
+
+
+        $resultado = [];
+
+        foreach($bolos as $bolo) {
+            $bolo["nomeArquivo"] = "http://localhost/softcake/backend/v1/bolo/uploads/" . $bolo["nomeArquivo"];
+            $idBolo = $bolo["idBolo"];
+            $resultado[$idBolo] = array_merge(
+                $bolo, 
+                    [
+                        "imagens"=>(
+                            array_key_exists($idBolo, $resultado) && array_search($bolo["nomeArquivo"], $resultado[$idBolo]["imagens"]) !== false ?
+                            $resultado[$idBolo]["imagens"] :
+                            array_merge($resultado[$idBolo]["imagens"] ?? [], [$bolo["nomeArquivo"]])
+                        ),
+                        "ingredientes"=>(
+                            array_key_exists($idBolo, $resultado) && array_search($bolo["nomeIngrediente"], $resultado[$idBolo]["ingredientes"]) !== false ?
+                            $resultado[$idBolo]["ingredientes"] :
+                            array_merge($resultado[$idBolo]["ingredientes"] ?? [], [$bolo["nomeIngrediente"]]) 
+                        )
+                    ]
+                );
+            unset($resultado[$bolo["idBolo"]]["nomeArquivo"]);
+            unset($resultado[$bolo["idBolo"]]["nomeIngrediente"]);
+        }
+
+        return $resultado;
     }
 
     function create() {
 
         try {
-            $sqlCreate = "INSERT INTO tblbolo (nomeDetalhado, nomeCard, precoPorQuilo, descricao) VALUES (?, ?, ?, ?)";
+            $sqlCreate = "INSERT INTO tblbolo (nomeDetalhado, nomeCard, precoPorQuilo, descricao) VALUES (:nomeDetalhado, :nomeCard, :precoQuilo, :descricao)";
     
             $statement = $this->_conn->prepare($sqlCreate); 
-            $statement->bindValue(1, $this->_nomeDetalhado);
-            $statement->bindValue(2, $this->_nomeCard);
-            $statement->bindValue(3, $this->_precoQuilo);
-            $statement->bindValue(4, $this->_descricao);
+            $statement->bindParam(":nomeDetalhado", $this->_nomeDetalhado);
+            $statement->bindParam(":nomeCard", $this->_nomeCard);
+            $statement->bindParam(":precoQuilo", $this->_precoQuilo);
+            $statement->bindParam(":descricao", $this->_descricao);
 
             $statement->execute();
 
@@ -61,11 +123,11 @@ class ModelBolo {
                 $novoNomeArquivo = md5(microtime()) . ".$extensao";
                 move_uploaded_file($dadosImagem["tmp_name"], "../bolo/uploads/$novoNomeArquivo");
 
-                $sqlCreateImagem= "INSERT INTO tblimagembolo (nomeArquivo, idBolo) VALUES (?, ?);";
+                $sqlCreateImagem= "INSERT INTO tblimagembolo (nomeArquivo, idBolo) VALUES (:nomeArquivo, :idBolo);";
 
                 $statementImagem = $this->_conn->prepare($sqlCreateImagem); 
-                $statementImagem->bindValue(1, $novoNomeArquivo);
-                $statementImagem->bindValue(2, $this->_idBolo);
+                $statementImagem->bindParam(":nomeArquivo", $novoNomeArquivo);
+                $statementImagem->bindParam(":idBolo", $this->_idBolo);
                 $statementImagem->execute();
             }
         
@@ -80,19 +142,19 @@ class ModelBolo {
     function update() {
 
         try {
-            $sqlUpdate = "UPDATE tblbolo SET nomeDetalhado = ?, nomeCard = ?, precoPorQuilo = ?, descricao = ? WHERE idBolo = ?";
+            $sqlUpdate = "UPDATE tblbolo SET nomeDetalhado = :nomeDetalhado, nomeCard = :nomeCard, precoPorQuilo = :precoPorQuilo, descricao = :descricao WHERE idBolo = :idBolo";
 
             $statement = $this->_conn->prepare($sqlUpdate);
-            $statement->bindValue(1, $this->_nomeDetalhado);
-            $statement->bindValue(2, $this->_nomeCard);
-            $statement->bindValue(3, $this->_precoQuilo);
-            $statement->bindValue(4, $this->_descricao);
-            $statement->bindValue(5, $this->_idBolo);
+            $statement->bindParam(":nomeDetalhado", $this->_nomeDetalhado);
+            $statement->bindParam(":nomeCard", $this->_nomeCard);
+            $statement->bindParam(":precoPorQuilo", $this->_precoQuilo);
+            $statement->bindParam(":descricao", $this->_descricao);
+            $statement->bindParam(":idBolo", $this->_idBolo);
             $statement->execute();
 
-            $sqlFotosCadastradas = "SELECT nomeArquivo FROM tblimagembolo WHERE idBolo = ?";
+            $sqlFotosCadastradas = "SELECT nomeArquivo FROM tblimagembolo WHERE idBolo = :idBolo";
             $statement = $this->_conn->prepare($sqlFotosCadastradas);
-            $statement->bindValue(1, $this->_idBolo);
+            $statement->bindParam(":idBolo", $this->_idBolo);
             $statement->execute();
             $arrayNomesAquivos = $statement->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -101,9 +163,9 @@ class ModelBolo {
                 unlink("../bolo/uploads/$arquivo");
             }
 
-            $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = ?;";
+            $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = :idBolo;";
             $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
-            $statementDelecaoImagens->bindValue(1, $this->_idBolo);
+            $statementDelecaoImagens->bindParam(":idBolo", $this->_idBolo);
             $statementDelecaoImagens->execute();
             
 
@@ -114,11 +176,11 @@ class ModelBolo {
                 move_uploaded_file($dadosImagem["tmp_name"], "../bolo/uploads/$novoNomeArquivo");
 
 
-                $sqlUpdateImagem= "INSERT INTO tblimagembolo (nomeArquivo, idBolo) VALUES (?, ?);";
+                $sqlUpdateImagem= "INSERT INTO tblimagembolo (nomeArquivo, idBolo) VALUES (:nomeArquivo, :idBolo);";
 
                 $statementImagem = $this->_conn->prepare($sqlUpdateImagem); 
-                $statementImagem->bindValue(1, $novoNomeArquivo);
-                $statementImagem->bindValue(2, $this->_idBolo);
+                $statementImagem->bindParam(":nomeArquivo", $novoNomeArquivo);
+                $statementImagem->bindParam(":idBolo", $this->_idBolo);
                 $statementImagem->execute();
             }
 
@@ -134,9 +196,9 @@ class ModelBolo {
     function delete() {
         try {
 
-            $sqlFotosCadastradas = "SELECT nomeArquivo FROM tblimagembolo WHERE idBolo = ?";
+            $sqlFotosCadastradas = "SELECT nomeArquivo FROM tblimagembolo WHERE idBolo = :idBolo";
             $statement = $this->_conn->prepare($sqlFotosCadastradas);
-            $statement->bindValue(1, $this->_idBolo);
+            $statement->bindParam(":idBolo", $this->_idBolo);
             $statement->execute();
             $arrayNomesAquivos = $statement->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -145,18 +207,18 @@ class ModelBolo {
                 unlink("../bolo/uploads/$arquivo");
             }
 
-            $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = ?;";
+            $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = :idBolo;";
             $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
-            $statementDelecaoImagens->bindValue(1, $this->_idBolo);
+            $statementDelecaoImagens->bindParam(":idBolo", $this->_idBolo);
             $statementDelecaoImagens->execute();
-            $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = ?;";
+            $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = :idBolo;";
             $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
-            $statementDelecaoImagens->bindValue(1, $this->_idBolo);
+            $statementDelecaoImagens->bindParam(":idBolo", $this->_idBolo);
             $statementDelecaoImagens->execute();
             
-            $sqlDeletaImagensExistentes = "DELETE FROM tblbolo WHERE idBolo = ?;";
+            $sqlDeletaImagensExistentes = "DELETE FROM tblbolo WHERE idBolo = :idBolo;";
             $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
-            $statementDelecaoImagens->bindValue(1, $this->_idBolo);
+            $statementDelecaoImagens->bindParam(":idBolo", $this->_idBolo);
             $statementDelecaoImagens->execute();
 
             return gerarResposta("Informações do bolo apagadas com sucesso");
