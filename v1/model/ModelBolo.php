@@ -28,7 +28,7 @@ class ModelBolo {
         INNER JOIN tblImagemBolo ON tblbolo.idBolo = tblImagemBolo.idBolo
         INNER JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
         INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
-        WHERE tblBolo.idBolo = :idBolo GROUP BY tblIngrediente.nome";
+        WHERE tblBolo.idBolo = :idBolo";
 
         $statement = $this->_conn->prepare($sqlfindOne); 
         $statement->bindParam(":idBolo", $this->_idBolo);
@@ -67,8 +67,7 @@ class ModelBolo {
         $sqlFindMany = "SELECT tblBolo.*, tblImagemBolo.nomeArquivo, tblIngrediente.nome AS nomeIngrediente FROM tblbolo
         INNER JOIN tblImagemBolo ON tblbolo.idBolo = tblImagemBolo.idBolo
         INNER JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
-        INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
-        GROUP BY tblIngrediente.nome";
+        INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente";
 
         $statement= $this->_conn->prepare($sqlFindMany); 
         $statement->execute(); 
