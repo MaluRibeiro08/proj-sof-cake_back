@@ -29,10 +29,9 @@ class ModelUsuario {
         $this->_conn = $conn;
     }
 
-    // Primeiro você vai obter os dados do tblUsuario e salva numa variavel
-    // Agora você faz outro select e verifica na tblPerfil se há um usuario com o id da tblUsuario
-    // Agora você mescla as arrays
-
+    // 1 - obter os dados do tblUsuario e salvar numa variavel
+    // 2 - fazer outro select e verificar na tblPerfil se há um usuario com o id da tblUsuario
+    // 3 - mesclar os arrays
 
     public function findOne() {
 
@@ -86,16 +85,16 @@ class ModelUsuario {
 
             $this->_idUsuario = $this->_conn->lastInsertId();
 
-
-            $sqlPerfil = "INSERT INTO tblperfil (email, senha, foto, idUsuario) VALUES (:email, :senha, :foto, :idUsuario)";
+            // $sqlPerfil = "INSERT INTO tblperfil (email, senha, foto, idUsuario) VALUES (:email, :senha, :foto, :idUsuario)";
             
-            $stmPerfil = $this->_conn->prepare($sqlPerfil);
-            $stmPerfil->bindParam(":email", $this->_email);
-            $stmPerfil->bindParam(":senha", $this->_senha);
-            $stmPerfil->bindParam(":foto", $this->_foto);
-            $stmPerfil->bindParam(":idUsuario", $this->_idUsuario);
+            // $stmPerfil = $this->_conn->prepare($sqlPerfil);
+            // $stmPerfil->bindParam(":email", $this->_email);
+            // $stmPerfil->bindParam(":senha", $this->_senha);
+            // $stmPerfil->bindParam(":foto", $insercaoImagem);
+            // $stmPerfil->bindParam(":idUsuario", $this->_idUsuario);
 
-             $stmPerfil->execute();
+            //  $stmPerfil->execute();
+             
 
             return gerarResposta("Usuário cadastrado com sucesso");
 
@@ -142,6 +141,17 @@ class ModelUsuario {
             $stm->bindParam(":idUsuario", $this->_idUsuario);
 
             $stm->execute();
+
+            // $sqlPerfil = "UPDATE tblperfil SET email = :email, senha = :senha, foto = :foto WHERE idUsuario = :idUsuario";
+
+            // $stm = $this->_conn->prepare($sqlPerfil);
+            // $stm->bindParam(":email", $this->_email);
+            // $stm->bindParam(":senha", $this->_senha);
+            // $stm->bindParam(":foto", $this->_foto);
+            // $stm->bindParam(":idUsuario", $this->_idUsuario);
+
+            // $stm->execute();
+
             return gerarResposta("Usuário atualizado com sucesso");
         } catch (PDOException $error) {
             return gerarResposta($error->getMessage(), 'erro');

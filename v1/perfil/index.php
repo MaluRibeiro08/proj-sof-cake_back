@@ -6,12 +6,12 @@
     header("Content-Type: application/json");
 
     include('../database/Conexao.php');
-    include('../model/ModelAuth.php');
-    include('../controller/ControllerAuth.php');
+    include('../model/ModelPerfil.php');
+    include('../controller/ControllerPerfil.php');
 
     $conn = new Conexao();
-    $model = new ModelAuth($conn->getConnection());
-    $controller = new ControllerAuth($model);
+    $model = new ModelPerfil($conn->getConnection());
+    $controller = new ControllerPerfil($model);
 
     $dados = $controller->router();
 
