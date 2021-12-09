@@ -16,6 +16,12 @@
                 case 'cadastro':
                     return $this->_modelPerfil->cadastro();
                     break;
+                case 'update':
+                    return $this->_modelPerfil->update();
+                    break;
+                case 'delete':
+                    return $this->_modelPerfil->delete();
+                    break;
                 case 'get':
                     return $this->_modelPerfil->verifyToken();
                     break;
