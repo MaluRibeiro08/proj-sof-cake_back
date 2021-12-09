@@ -4,6 +4,7 @@ require_once '../../vendor/autoload.php';
 use Firebase\JWT\JWT;
 
 class ModelPerfil {
+    private $_idPerfil;
     private $_conn;
     private $_cpf;
     private $_email;
@@ -18,6 +19,7 @@ class ModelPerfil {
         $dadosUsuario = json_decode($json);
 
         $this->_conn = $conn;
+        $this->_idPerfil = $_REQUEST["idPerfil"] ?? $dadosUsuario->idPerfil ?? null;
         $this->_nome = $_REQUEST["nome"] ?? $dadosUsuario->nome ?? null;
         $this->_cpf = $_REQUEST["cpf"] ?? $dadosUsuario->cpf ?? null;
         $this->_telefone = $_REQUEST["telefone"] ?? $dadosUsuario->telefone ?? null;
@@ -120,7 +122,6 @@ class ModelPerfil {
         $this->_nomeArquivo = md5(microtime()) . ".$extensao";
         $insercaoImagem = move_uploaded_file($imagem["tmp_name"], "../usuario/uploads/$this->_nomeArquivo");
         
-
         $sqlNovaImagem = "UPDATE tblperfil SET foto = :foto WHERE idUsuario = :idUsuario";
 
         $statementInsercaoImagem = $this->_conn->prepare($sqlNovaImagem);
@@ -128,31 +129,37 @@ class ModelPerfil {
         $statementInsercaoImagem->bindParam(":idUsuario", $this->_idUsuario);
         $statementInsercaoImagem->execute();
 
-        return "Sucesso";
+        return gerarResposta("Sucesso");
 
     }
 
     function delete() {
+        
+        try {
+            
+            $sqlPerfil = "SELECT * FROM tblperfil WHERE idPerfil = :idPerfil";
 
-        $sqlPerfil = "SELECT * FROM tblperfil WHERE idUsuario = :idUsuario";
+            $stm = $this->_conn->prepare($sqlPerfil);
+            $stm->bindParam(":idPerfil", $this->_idPerfil);
+            $stm->execute();
+            $perfil = $stm->fetch(PDO:: FETCH_ASSOC);
+         
+            if($perfil["foto"] !== null) {
+                unlink("../usuario/uploads/" . $perfil["foto"]);
+            }
 
-        $stm = $this->_conn->prepare($sqlPerfil);
-        $stm->bindParam(":idUsuario", $this->_idUsuario);
-        $stm->execute();
-        $perfil = $stm->fetch(PDO::FETCH_ASSOC);
+            $sqlDelecaoPerfil = "DELETE FROM tblperfil WHERE idPerfil = :idPerfil";
 
-        if($perfil["foto"] !== null) {
-            unlink("../usuario/uploads/" . $perfil["foto"]);
+            $stm = $this->_conn->prepare($sqlDelecaoPerfil);
+            $stm->bindParam(":idPerfil", $this->_idPerfil);
+            $stm->execute();
+
+            return gerarResposta("Sucesso");
+
+        } catch (PDOException $error) {
+            return gerarResposta($error->getMessage(), 'erro');
         }
-
-        $sqlDelecaoPerfil = "DELETE FROM tblperfil WHERE idUsuario = :idUsuario";
-
-        $stm = $this->_conn->prepare($sqlDelecaoPerfil);
-        $stm->bindParam(":idUsuario", $this->_idUsuario);
-        $stm->execute();
-
-        return "Sucesso";
-
+        
     }
 
     function login() {
