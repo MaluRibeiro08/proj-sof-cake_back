@@ -25,12 +25,14 @@ class ModelPerfil {
         $this->_senha = $_REQUEST["senha"] ?? $dadosUsuario->senha ?? null;
         $this->_token = $_SERVER["HTTP_AUTHORIZATION"];
         $this->_foto = $_REQUEST["foto"] ?? $dadosUsuario->foto ?? null;
+        $this->_nomeArquivo = $_REQUEST["nomeArquivo"] ?? $dadosUsuario->nomeArquivo ?? null;
         $this->_idUsuario = $_REQUEST["idUsuario"] ?? $dadosUsuario->idUsuario ?? null;
 
         $this->_conn= $conn; 
     }
 
     function cadastro() {
+
         $sql = "SELECT * FROM tblperfil WHERE email = :email";
         $stmt = $this->_conn->prepare($sql);
         $stmt->bindParam(":email", $this->_email);
@@ -46,21 +48,15 @@ class ModelPerfil {
             $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            foreach ($_FILES as $indice => $dadosImagem){
-                $extensao = pathinfo($dadosImagem['name'], PATHINFO_EXTENSION);
-                $this->_nomeArquivo = md5(microtime()) . ".$extensao";
-                $insercaoImagem = move_uploaded_file($dadosImagem["tmp_name"], "../usuario/uploads/$this->_nomeArquivo");
-            }
             try {
                 if($result) {
-                    $sql = "INSERT INTO tblperfil (email, senha, foto, idUsuario) VALUES (:email, :senha, :foto, :idUsuario)";
+                    $sql = "INSERT INTO tblperfil (email, senha, idUsuario) VALUES (:email, :senha, :idUsuario)";
                     $senha = password_hash($this->_senha, PASSWORD_ARGON2I);
 
                 
                     $stmt = $this->_conn->prepare($sql);
                     $stmt->bindParam(":email", $this->_email);
                     $stmt->bindParam(":senha", $senha);
-                    $stmt->bindParam(":foto", $this->_nomeArquivo);
                     $stmt->bindParam(":idUsuario", $result["idUsuario"]);
                     $stmt->execute();
                     return gerarResposta("Usuário cadastrado com sucesso");
@@ -74,12 +70,11 @@ class ModelPerfil {
                     $stmt->execute();
                     $idUsuario = $this->_conn->lastInsertId();
         
-                    $sql = "INSERT INTO tblperfil (email, senha, foto, idUsuario) VALUES (:email, :senha, :foto, :idUsuario)";
+                    $sql = "INSERT INTO tblperfil (email, senha, idUsuario) VALUES (:email, :senha, :idUsuario)";
                     $senha = password_hash($this->_senha, PASSWORD_ARGON2I);
                     $stmt = $this->_conn->prepare($sql);
                     $stmt->bindParam(":email", $this->_email);
                     $stmt->bindParam(":senha", $senha);
-                    $stmt->bindParam(":foto", $this->_nomeArquivo);
                     $stmt->bindParam(":idUsuario", $idUsuario);
                     $stmt->execute();
                     return gerarResposta("Usuário cadastrado com sucesso");
@@ -94,43 +89,69 @@ class ModelPerfil {
 
     function update() {
 
-        $sqlPerfil = "UPDATE tblperfil SET email = :email, senha = :senha WHERE idUsuario = :idUsuario";
+        $sqlPerfil = "SELECT * FROM tblperfil WHERE idUsuario = :idUsuario";
 
         $stm = $this->_conn->prepare($sqlPerfil);
+        $stm->bindParam(":idUsuario", $this->_idUsuario);
+        $stm->execute();
+        $perfil = $stm->fetch(PDO::FETCH_ASSOC);
+
+        $sqlUpdatePerfil = "UPDATE tblperfil SET email = :email, senha = :senha WHERE idUsuario = :idUsuario";
+
+        $stm = $this->_conn->prepare($sqlUpdatePerfil);
         $stm->bindParam(":email", $this->_email);
         $stm->bindParam(":senha", $this->_senha);
         $stm->bindParam(":idUsuario", $this->_idUsuario);
 
         $stm->execute();
 
-        $sqlDeletarImagemExistente = "DELETE foto FROM tblperfil WHERE idUsuario = :idUsuario";
+        if($perfil["foto"] !== null) {
+            unlink("../usuario/uploads/" . $perfil["foto"]);
+        }
+
+        $sqlDeletarImagemExistente = "UPDATE tblperfil SET foto = NULL WHERE idUsuario = :idUsuario";
 
         $statementDelecaoImagem = $this->_conn->prepare($sqlDeletarImagemExistente);
         $statementDelecaoImagem->bindParam(":idUsuario", $this->_idUsuario);
         $statementDelecaoImagem->execute();
+        
+        $imagem = $_FILES["foto"];
+        $extensao = pathinfo($imagem['name'], PATHINFO_EXTENSION);
+        $this->_nomeArquivo = md5(microtime()) . ".$extensao";
+        $insercaoImagem = move_uploaded_file($imagem["tmp_name"], "../usuario/uploads/$this->_nomeArquivo");
+        
 
-        $sqlNovaImagem = "INSERT INTO tblperfil (foto, idUsuario) VALUES (:foto, :idUsuario)";
+        $sqlNovaImagem = "UPDATE tblperfil SET foto = :foto WHERE idUsuario = :idUsuario";
 
         $statementInsercaoImagem = $this->_conn->prepare($sqlNovaImagem);
         $statementInsercaoImagem->bindParam(":foto", $this->_nomeArquivo);
         $statementInsercaoImagem->bindParam(":idUsuario", $this->_idUsuario);
         $statementInsercaoImagem->execute();
-            
 
-            // foreach ($_FILES as $indice => $dadosImagem){
-                
-            //     $extensao = pathinfo($dadosImagem['name'], PATHINFO_EXTENSION);
-            //     $novoNomeArquivo = md5(microtime()) . ".$extensao";
-            //     move_uploaded_file($dadosImagem["tmp_name"], "../bolo/uploads/$novoNomeArquivo");
+        return "Sucesso";
 
+    }
 
-            //     $sqlUpdateImagem= "INSERT INTO tblimagembolo (nomeArquivo, idBolo) VALUES (:nomeArquivo, :idBolo);";
+    function delete() {
 
-            //     $statementImagem = $this->_conn->prepare($sqlUpdateImagem); 
-            //     $statementImagem->bindParam(":nomeArquivo", $novoNomeArquivo);
-            //     $statementImagem->bindParam(":idBolo", $this->_idBolo);
-            //     $statementImagem->execute();
-            // }
+        $sqlPerfil = "SELECT * FROM tblperfil WHERE idUsuario = :idUsuario";
+
+        $stm = $this->_conn->prepare($sqlPerfil);
+        $stm->bindParam(":idUsuario", $this->_idUsuario);
+        $stm->execute();
+        $perfil = $stm->fetch(PDO::FETCH_ASSOC);
+
+        if($perfil["foto"] !== null) {
+            unlink("../usuario/uploads/" . $perfil["foto"]);
+        }
+
+        $sqlDelecaoPerfil = "DELETE FROM tblperfil WHERE idUsuario = :idUsuario";
+
+        $stm = $this->_conn->prepare($sqlDelecaoPerfil);
+        $stm->bindParam(":idUsuario", $this->_idUsuario);
+        $stm->execute();
+
+        return "Sucesso";
 
     }
 
@@ -153,6 +174,7 @@ class ModelPerfil {
                 "idPerfil" => $perfil["idPerfil"],
                 "email" => $perfil["email"],
                 "foto" => $perfil["foto"],
+                "isAdmin" => $perfil["eAdmin"],
                 "usuario" => $usuario
             ], "softcake_auth"));
         } else {
