@@ -64,10 +64,12 @@ class ModelBolo {
     }
 
     function findMany() {
-        $sqlFindMany = "SELECT tblBolo.*, tblImagemBolo.nomeArquivo, tblIngrediente.nome AS nomeIngrediente FROM tblbolo
+        $sqlFindMany = "SELECT tblBolo.*, tblImagemBolo.nomeArquivo, tblIngrediente.nome AS nomeIngrediente,
+        tblavaliacao.quantidadeEstrelas as nota, tblavaliacao.idAvaliacao as idNota FROM tblbolo
         INNER JOIN tblImagemBolo ON tblbolo.idBolo = tblImagemBolo.idBolo
         INNER JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
-        INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente";
+        INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
+        INNER JOIN tblavaliacao on tblavaliacao.idBolo = tblbolo.idBolo";
 
         $statement= $this->_conn->prepare($sqlFindMany); 
         $statement->execute(); 
@@ -75,10 +77,35 @@ class ModelBolo {
 
 
         $resultado = [];
+        $estrelas = [];
+
+        /*
+            estrelas: {
+                1: {
+                    1: 5
+                }
+            }
+        */
 
         foreach($bolos as $bolo) {
             $bolo["nomeArquivo"] = "http://localhost/softcake/backend/v1/bolo/uploads/" . $bolo["nomeArquivo"];
             $idBolo = $bolo["idBolo"];
+            
+            if(array_key_exists($idBolo, $estrelas)) {
+                !array_key_exists($bolo["idNota"], $estrelas[$idBolo]) &&
+                $estrelas[$idBolo][$bolo["idNota"]] = $bolo["nota"];
+            } else {
+                $estrelas[$idBolo][$bolo["idNota"]] = $bolo["nota"];
+            }
+
+            $notas = 0;
+            $media = 0;
+
+            foreach ($estrelas[$idBolo] as $indice => $nota) {
+                $notas += $nota;
+            }
+            $media = $notas / count($estrelas[$idBolo]);
+
             $resultado[$idBolo] = array_merge(
                 $bolo, 
                     [
@@ -91,9 +118,14 @@ class ModelBolo {
                             array_key_exists($idBolo, $resultado) && array_search($bolo["nomeIngrediente"], $resultado[$idBolo]["ingredientes"]) !== false ?
                             $resultado[$idBolo]["ingredientes"] :
                             array_merge($resultado[$idBolo]["ingredientes"] ?? [], [$bolo["nomeIngrediente"]]) 
+                        ),
+                        "estrelas"=>(
+                            $media
                         )
                     ]
                 );
+            unset($resultado[$bolo["idBolo"]]["nota"]);
+            unset($resultado[$bolo["idBolo"]]["idNota"]);
             unset($resultado[$bolo["idBolo"]]["nomeArquivo"]);
             unset($resultado[$bolo["idBolo"]]["nomeIngrediente"]);
         }
