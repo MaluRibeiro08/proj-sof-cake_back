@@ -24,11 +24,13 @@ class ModelBolo {
     }
 
     function findOne() {
-        $sqlfindOne = "SELECT tblBolo.*, tblImagemBolo.nomeArquivo, tblIngrediente.nome AS nomeIngrediente FROM tblbolo
-        INNER JOIN tblImagemBolo ON tblbolo.idBolo = tblImagemBolo.idBolo
-        INNER JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
-        INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
-        WHERE tblBolo.idBolo = :idBolo";
+        $sqlfindOne = "SELECT tblBolo.*, tblImagemBolo.nomeArquivo, tblIngrediente.nome AS nomeIngrediente, tblavaliacao.idavaliacao as idAvaliacao, tblAvaliacao.quantidadeEstrelas as nota, tblavaliacao.comentario as comentario 
+            FROM tblbolo
+            INNER JOIN tblImagemBolo ON tblbolo.idBolo = tblImagemBolo.idBolo
+            INNER JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
+            INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
+            LEFT JOIN tblavaliacao on tblavaliacao.idbolo = tblbolo.idbolo
+            WHERE tblBolo.idBolo = :idBolo;";
 
         $statement = $this->_conn->prepare($sqlfindOne); 
         $statement->bindParam(":idBolo", $this->_idBolo);
@@ -37,10 +39,19 @@ class ModelBolo {
 
 
         $resultado = [];
+        $avaliacoes = [];
 
         foreach($bolos as $bolo) {
             $bolo["nomeArquivo"] = "http://localhost/softcake/backend/v1/bolo/uploads/" . $bolo["nomeArquivo"];
             $idBolo = $bolo["idBolo"];
+
+            $avaliacoes[$bolo["idAvaliacao"]] = [
+                "idAvaliacao" =>$bolo["idAvaliacao"],    
+                "nota"=>$bolo["nota"],
+                "comentario"=> $bolo["comentario"]
+            ];
+
+
             $resultado[$idBolo] = array_merge(
                 $bolo, 
                     [
@@ -53,9 +64,19 @@ class ModelBolo {
                             array_key_exists($idBolo, $resultado) && array_search($bolo["nomeIngrediente"], $resultado[$idBolo]["ingredientes"]) !== false ?
                             $resultado[$idBolo]["ingredientes"] :
                             array_merge($resultado[$idBolo]["ingredientes"] ?? [], [$bolo["nomeIngrediente"]]) 
+                        ),
+                        "avaliacoes" =>(
+                            array_key_exists($idBolo, $resultado) && array_search($bolo["idAvaliacao"], $resultado[$idBolo]["avaliacoes"]) !== false ?
+                            $resultado[$idBolo]["avaliacoes"] :
+                            array_merge($avaliacoes) 
                         )
+
                     ]
                 );
+            unset($resultado[$bolo["idBolo"]]["nota"]);
+            unset($resultado[$bolo["idBolo"]]["idNota"]);
+            unset($resultado[$bolo["idBolo"]]["idAvaliacao"]);
+            unset($resultado[$bolo["idBolo"]]["comentario"]);
             unset($resultado[$bolo["idBolo"]]["nomeArquivo"]);
             unset($resultado[$bolo["idBolo"]]["nomeIngrediente"]);
         }
@@ -69,7 +90,7 @@ class ModelBolo {
         INNER JOIN tblImagemBolo ON tblbolo.idBolo = tblImagemBolo.idBolo
         INNER JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
         INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
-        INNER JOIN tblavaliacao on tblavaliacao.idBolo = tblbolo.idBolo";
+        LEFT JOIN tblavaliacao on tblavaliacao.idBolo = tblbolo.idBolo";
 
         $statement= $this->_conn->prepare($sqlFindMany); 
         $statement->execute(); 
@@ -119,7 +140,7 @@ class ModelBolo {
                             $resultado[$idBolo]["ingredientes"] :
                             array_merge($resultado[$idBolo]["ingredientes"] ?? [], [$bolo["nomeIngrediente"]]) 
                         ),
-                        "estrelas"=>(
+                        "media-avaliacoes"=>(
                             $media
                         )
                     ]
