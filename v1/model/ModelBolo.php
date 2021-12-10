@@ -24,12 +24,16 @@ class ModelBolo {
     }
 
     function findOne() {
-        $sqlfindOne = "SELECT tblBolo.*, tblImagemBolo.nomeArquivo, tblIngrediente.nome AS nomeIngrediente, tblavaliacao.idavaliacao as idAvaliacao, tblAvaliacao.quantidadeEstrelas as nota, tblavaliacao.comentario as comentario 
+        $sqlfindOne = "SELECT tblBolo.*, tblImagemBolo.nomeArquivo, tblIngrediente.nome AS nomeIngrediente,
+                        tblavaliacao.idavaliacao as idAvaliacao, tblAvaliacao.quantidadeEstrelas as nota,
+                        tblavaliacao.comentario as comentario, tblUsuario.nome as nomeUsuario, tblPerfil.foto as fotoUsuario
             FROM tblbolo
             INNER JOIN tblImagemBolo ON tblbolo.idBolo = tblImagemBolo.idBolo
-            INNER JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
-            INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
+            LEFT JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
+            LEFT JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
             LEFT JOIN tblavaliacao on tblavaliacao.idbolo = tblbolo.idbolo
+            LEFT JOIN tblUsuario on tblavaliacao.idUsuario = tblUsuario.idUsuario
+            LEFT JOIN tblPerfil on tblPerfil.idUsuario = tblUsuario.idUsuario
             WHERE tblBolo.idBolo = :idBolo;";
 
         $statement = $this->_conn->prepare($sqlfindOne); 
@@ -48,7 +52,11 @@ class ModelBolo {
             $avaliacoes[$bolo["idAvaliacao"]] = [
                 "idAvaliacao" =>$bolo["idAvaliacao"],    
                 "nota"=>$bolo["nota"],
-                "comentario"=> $bolo["comentario"]
+                "comentario"=> $bolo["comentario"],
+                "usuario"=> [
+                    "nome"=>$bolo["nomeUsuario"],
+                    "foto"=>$bolo["foto"] ?? null
+                ]
             ];
 
 
@@ -88,8 +96,8 @@ class ModelBolo {
         $sqlFindMany = "SELECT tblBolo.*, tblImagemBolo.nomeArquivo, tblIngrediente.nome AS nomeIngrediente,
         tblavaliacao.quantidadeEstrelas as nota, tblavaliacao.idAvaliacao as idNota FROM tblbolo
         INNER JOIN tblImagemBolo ON tblbolo.idBolo = tblImagemBolo.idBolo
-        INNER JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
-        INNER JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
+        LEFT JOIN tblBoloIngrediente ON tblBolo.idBolo = tblBoloIngrediente.idBolo
+        LEFT JOIN tblIngrediente ON tblBoloIngrediente.idIngrediente = tblIngrediente.idIngrediente
         LEFT JOIN tblavaliacao on tblavaliacao.idBolo = tblbolo.idBolo";
 
         $statement= $this->_conn->prepare($sqlFindMany); 
