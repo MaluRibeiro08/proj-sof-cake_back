@@ -19,6 +19,9 @@ class ModelBolo {
             $this->_nomeCard = $_REQUEST["nomeCard"] ?? $dadosBolo->nomeCard ?? null;
             $this->_precoQuilo = $_REQUEST["precoQuilo"] ?? $dadosBolo->precoQuilo ?? null;
             $this->_descricao = $_REQUEST["descricao"] ?? $dadosBolo->descricao ?? null;
+            $this->_imagens = $_REQUEST["imagens"] ?? $dadosBolo->imagens ?? null;
+            $this->_ingredientes = $_REQUEST["ingredientes"] ?? $dadosBolo->ingredientes ?? null;
+            $this->_novosIngredientes = $_REQUEST["novosIngredientes"] ?? $dadosBolo->novosIngredientes ?? null;
 
             $this->_conn= $conn; 
     }
@@ -163,7 +166,6 @@ class ModelBolo {
     }
 
     function create() {
-
         try {
             $sqlCreate = "INSERT INTO tblbolo (nomeDetalhado, nomeCard, precoPorQuilo, descricao) VALUES (:nomeDetalhado, :nomeCard, :precoQuilo, :descricao)";
     
@@ -177,11 +179,32 @@ class ModelBolo {
 
             $this->_idBolo = $this->_conn->lastInsertId();
 
-            foreach ($_FILES as $indice => $dadosImagem){
-                
-                $extensao = pathinfo($dadosImagem['name'], PATHINFO_EXTENSION);
-                $novoNomeArquivo = md5(microtime()) . ".$extensao";
-                move_uploaded_file($dadosImagem["tmp_name"], "../bolo/uploads/$novoNomeArquivo");
+
+            $ingredientesCriados = [];
+            foreach($this->_novosIngredientes as $ingrediente) {
+                $sqlInsertIngrediente = "INSERT INTO tblIngrediente (nome) VALUES (:nome)";
+                $statement = $this->_conn->prepare($sqlInsertIngrediente);
+                $statement->bindValue(":nome", $ingrediente);
+                $statement->execute();
+                $ingredientesCriados[] = $this->_conn->lastInsertId();
+            }
+
+
+            $sqlIngredientes = "INSERT INTO tblBoloIngrediente (idBolo, idIngrediente) VALUES ";
+            foreach(array_merge($this->_ingredientes, $ingredientesCriados) as $ingrediente) $sqlIngredientes .= "(" . $this->_idBolo . ", " . $ingrediente . "),";
+            
+            $sqlIngredientes = substr($sqlIngredientes, 0, -1);
+            $statementIngrediente = $this->_conn->prepare($sqlIngredientes);
+            $statementIngrediente->execute();
+
+
+            foreach($this->_imagens as $imagem) {
+                $novoNomeArquivo = md5(microtime()) . ".png";
+                list($type, $data) = explode(';', $imagem);
+                list(, $data)      = explode(',', $data);
+                $data = base64_decode($data);
+
+                file_put_contents("../bolo/uploads/$novoNomeArquivo", $data);
 
                 $sqlCreateImagem= "INSERT INTO tblimagembolo (nomeArquivo, idBolo) VALUES (:nomeArquivo, :idBolo);";
 
@@ -190,8 +213,7 @@ class ModelBolo {
                 $statementImagem->bindParam(":idBolo", $this->_idBolo);
                 $statementImagem->execute();
             }
-        
-
+            
             return gerarResposta("Bolo cadastrado com sucesso");
 
         } catch (PDOException $error) {
