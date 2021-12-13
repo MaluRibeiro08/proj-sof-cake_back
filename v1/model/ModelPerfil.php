@@ -90,6 +90,10 @@ class ModelPerfil {
     }
 
     function update() {
+        // $json = file_get_contents("php://input");
+        // $dadosUsuario = json_decode($json);
+        // var_dump($dadosUsuario);
+        // var_dump($_REQUEST);die;
 
         $sqlPerfil = "SELECT * FROM tblperfil WHERE idUsuario = :idUsuario";
 
@@ -98,38 +102,57 @@ class ModelPerfil {
         $stm->execute();
         $perfil = $stm->fetch(PDO::FETCH_ASSOC);
 
+        $senha = password_hash($this->_senha, PASSWORD_ARGON2I);
+
         $sqlUpdatePerfil = "UPDATE tblperfil SET email = :email, senha = :senha WHERE idUsuario = :idUsuario";
 
         $stm = $this->_conn->prepare($sqlUpdatePerfil);
         $stm->bindParam(":email", $this->_email);
-        $stm->bindParam(":senha", $this->_senha);
+        $stm->bindParam(":senha", $senha);
         $stm->bindParam(":idUsuario", $this->_idUsuario);
 
         $stm->execute();
 
         if($perfil["foto"] !== null) {
-            unlink("../usuario/uploads/" . $perfil["foto"]);
+            unlink("../perfil/uploads/" . $perfil["foto"]);
         }
 
-        $sqlDeletarImagemExistente = "UPDATE tblperfil SET foto = NULL WHERE idUsuario = :idUsuario";
+        $imagem = $this->_foto;
 
-        $statementDelecaoImagem = $this->_conn->prepare($sqlDeletarImagemExistente);
-        $statementDelecaoImagem->bindParam(":idUsuario", $this->_idUsuario);
-        $statementDelecaoImagem->execute();
-        
-        $imagem = $_FILES["foto"];
-        $extensao = pathinfo($imagem['name'], PATHINFO_EXTENSION);
-        $this->_nomeArquivo = md5(microtime()) . ".$extensao";
-        $insercaoImagem = move_uploaded_file($imagem["tmp_name"], "../usuario/uploads/$this->_nomeArquivo");
-        
+        $novoNomeArquivo = md5(microtime()) . ".png";
+        list($type, $data) = explode(';', $imagem);
+        list(, $data)      = explode(',', $data);
+        $data = base64_decode($data);
+
+        file_put_contents("../perfil/uploads/$novoNomeArquivo", $data);
+
         $sqlNovaImagem = "UPDATE tblperfil SET foto = :foto WHERE idUsuario = :idUsuario";
 
         $statementInsercaoImagem = $this->_conn->prepare($sqlNovaImagem);
-        $statementInsercaoImagem->bindParam(":foto", $this->_nomeArquivo);
+        $statementInsercaoImagem->bindParam(":foto", $novoNomeArquivo);
         $statementInsercaoImagem->bindParam(":idUsuario", $this->_idUsuario);
         $statementInsercaoImagem->execute();
 
-        return gerarResposta("Sucesso");
+        $sqlUpdateUsuario = "UPDATE tblusuario SET nome = :nome WHERE idUsuario = :idUsuario";
+
+        $stm = $this->_conn->prepare($sqlUpdateUsuario);
+        $stm->bindParam(":nome", $this->_nome);
+        $stm->bindParam(":idUsuario", $this->_idUsuario);
+        $stm->execute();
+
+        $sql = "SELECT * FROM tblusuario WHERE idUsuario = :idUsuario";
+        $stmt = $this->_conn->prepare($sql);
+        $stmt->bindParam(":idUsuario", $perfil["idUsuario"]);
+        $stmt->execute();
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return gerarResposta(JWT::encode([
+            "idPerfil" => $perfil["idPerfil"],
+            "email" => $this->_email,
+            "foto" => "http://localhost/softcake/backend/v1/perfil/uploads/" . $novoNomeArquivo,
+            "isAdmin" => $perfil["eAdmin"],
+            "usuario" => $usuario
+        ], "softcake_auth"));
 
     }
 
