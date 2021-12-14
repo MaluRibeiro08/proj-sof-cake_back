@@ -205,7 +205,7 @@ class ModelPerfil {
             return gerarResposta(JWT::encode([
                 "idPerfil" => $perfil["idPerfil"],
                 "email" => $perfil["email"],
-                "foto" => $perfil["foto"],
+                "foto" => "http://localhost/softcake/backend/v1/perfil/uploads/" . $perfil["foto"],
                 "isAdmin" => $perfil["eAdmin"],
                 "usuario" => $usuario
             ], "softcake_auth"));
