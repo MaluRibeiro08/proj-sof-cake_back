@@ -1,7 +1,7 @@
 <?php
 $root = strpos($_SERVER["REQUEST_URI"], "/token") ||
         strpos($_SERVER["REQUEST_URI"], "/cadastro") ||
-        strpos($_SERVER["REQUEST_URI"], "/login") ? "../../../" : "../../";
+        strpos($_SERVER["REQUEST_URI"], "/login") ? "../../.." : "../..";
 require_once "$root/vendor/autoload.php" ;
 use Firebase\JWT\JWT;
 
