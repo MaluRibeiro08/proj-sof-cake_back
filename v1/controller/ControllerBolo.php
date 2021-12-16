@@ -37,13 +37,13 @@
                         return $this->_modelBolo->update(); 
                         break;
                     }
-                    elseif ($this->_acao == "delete") {
-                        return $this->_modelBolo->delete();
-                    }
+                    break;
+                case 'DELETE':
+                    return $this->_modelBolo->delete();
                     break;
             
                 default:
-                    return gerarResposta('Method not allowed');
+                    return gerarResposta('Method not allowed', 'erro');
                     break;
             }
         }

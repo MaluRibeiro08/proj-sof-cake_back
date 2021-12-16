@@ -277,7 +277,6 @@ class ModelBolo {
 
     function delete() {
         try {
-
             $sqlFotosCadastradas = "SELECT nomeArquivo FROM tblimagembolo WHERE idBolo = :idBolo";
             $statement = $this->_conn->prepare($sqlFotosCadastradas);
             $statement->bindParam(":idBolo", $this->_idBolo);
@@ -293,15 +292,16 @@ class ModelBolo {
             $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
             $statementDelecaoImagens->bindParam(":idBolo", $this->_idBolo);
             $statementDelecaoImagens->execute();
-            $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = :idBolo;";
-            $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
-            $statementDelecaoImagens->bindParam(":idBolo", $this->_idBolo);
-            $statementDelecaoImagens->execute();
+
+            $sqlDeletaAvaliacoes = "DELETE FROM tblavaliacao WHERE idBolo = :idBolo;";
+            $statementDelecaoAvaliacoes = $this->_conn->prepare($sqlDeletaAvaliacoes);
+            $statementDelecaoAvaliacoes->bindParam(":idBolo", $this->_idBolo);
+            $statementDelecaoAvaliacoes->execute();
             
-            $sqlDeletaImagensExistentes = "DELETE FROM tblbolo WHERE idBolo = :idBolo;";
-            $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
-            $statementDelecaoImagens->bindParam(":idBolo", $this->_idBolo);
-            $statementDelecaoImagens->execute();
+            $sqlDeletaBolo = "DELETE FROM tblbolo WHERE idBolo = :idBolo;";
+            $statementDelecaoBolo = $this->_conn->prepare($sqlDeletaBolo);
+            $statementDelecaoBolo->bindParam(":idBolo", $this->_idBolo);
+            $statementDelecaoBolo->execute();
 
             return gerarResposta("Informações do bolo apagadas com sucesso");
 
