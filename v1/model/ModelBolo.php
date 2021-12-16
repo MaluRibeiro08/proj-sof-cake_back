@@ -222,7 +222,6 @@ class ModelBolo {
     }
 
     function update() {
-
         try {
             $sqlUpdate = "UPDATE tblbolo SET nomeDetalhado = :nomeDetalhado, nomeCard = :nomeCard, precoPorQuilo = :precoPorQuilo, descricao = :descricao WHERE idBolo = :idBolo";
 
@@ -239,36 +238,62 @@ class ModelBolo {
             $statement->bindParam(":idBolo", $this->_idBolo);
             $statement->execute();
             $arrayNomesAquivos = $statement->fetchAll(\PDO::FETCH_ASSOC);
+            
+            $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = :idBolo;";
+            $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
+            $statementDelecaoImagens->bindParam(":idBolo", $this->_idBolo);
+            $statementDelecaoImagens->execute();
+            
+            $ingredientesCriados = [];
+            foreach($this->_novosIngredientes as $ingrediente) {
+                $sqlInsertIngrediente = "INSERT INTO tblIngrediente (nome) VALUES (:nome)";
+                $statement = $this->_conn->prepare($sqlInsertIngrediente);
+                $statement->bindParam(":nome", $ingrediente);
+                $statement->execute();
+                $ingredientesCriados[] = $this->_conn->lastInsertId();
+            }
+
+            $sqlDeletaIngredientes = "DELETE FROM tblBoloIngrediente WHERE idBolo = :idBolo";
+            $statementDeletaIngredientes = $this->_conn->prepare($sqlDeletaIngredientes);
+            $statementDeletaIngredientes->bindParam(":idBolo", $this->_idBolo);
+            $statementDeletaIngredientes->execute();
+
+            $sqlIngredientes = "INSERT INTO tblBoloIngrediente (idBolo, idIngrediente) VALUES ";
+            foreach(array_merge($this->_ingredientes, $ingredientesCriados) as $ingrediente) $sqlIngredientes .= "(" . $this->_idBolo . ", " . $ingrediente . "),";
+            $sqlIngredientes = substr($sqlIngredientes, 0, -1);
+            $statementIngrediente = $this->_conn->prepare($sqlIngredientes);
+            $statementIngrediente->execute();
+
+            foreach($this->_imagens as $imagem) {
+                $novoNomeArquivo = md5(microtime()) . ".png";
+                $data = null;
+                
+                if(str_contains($imagem, "http://")) {
+                    $arraySplit = explode("/", $imagem);
+                    $nomeArquivo = end($arraySplit);
+                    $data = file_get_contents("../bolo/uploads/$nomeArquivo");
+                } else {
+                    list($type, $data) = explode(';', $imagem);
+                    list(, $data)      = explode(',', $data);
+                    $data = base64_decode($data);
+                }
+
+                file_put_contents("../bolo/uploads/$novoNomeArquivo", $data);
+
+                $sqlCreateImagem= "INSERT INTO tblimagembolo (nomeArquivo, idBolo) VALUES (:nomeArquivo, :idBolo);";
+
+                $statementImagem = $this->_conn->prepare($sqlCreateImagem); 
+                $statementImagem->bindParam(":nomeArquivo", $novoNomeArquivo);
+                $statementImagem->bindParam(":idBolo", $this->_idBolo);
+                $statementImagem->execute();
+            }
 
             foreach ($arrayNomesAquivos as $arquivo => $dadosArquivoApagar) {
                 $arquivo = $dadosArquivoApagar['nomeArquivo'];
                 unlink("../bolo/uploads/$arquivo");
             }
 
-            $sqlDeletaImagensExistentes = "DELETE FROM tblimagembolo WHERE idBolo = :idBolo;";
-            $statementDelecaoImagens = $this->_conn->prepare($sqlDeletaImagensExistentes);
-            $statementDelecaoImagens->bindParam(":idBolo", $this->_idBolo);
-            $statementDelecaoImagens->execute();
-            
-
-            foreach ($_FILES as $indice => $dadosImagem){
-                
-                $extensao = pathinfo($dadosImagem['name'], PATHINFO_EXTENSION);
-                $novoNomeArquivo = md5(microtime()) . ".$extensao";
-                move_uploaded_file($dadosImagem["tmp_name"], "../bolo/uploads/$novoNomeArquivo");
-
-
-                $sqlUpdateImagem= "INSERT INTO tblimagembolo (nomeArquivo, idBolo) VALUES (:nomeArquivo, :idBolo);";
-
-                $statementImagem = $this->_conn->prepare($sqlUpdateImagem); 
-                $statementImagem->bindParam(":nomeArquivo", $novoNomeArquivo);
-                $statementImagem->bindParam(":idBolo", $this->_idBolo);
-                $statementImagem->execute();
-            }
-
             return gerarResposta("Informações do bolo atualizadas com sucesso");
-
-            
         } catch (PDOException $error) {
             return gerarResposta($error->getMessage(), 'erro');
         }
